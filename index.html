@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KPSS Ana Hafıza & Taban Puan Tahmin Robotu</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 16px; }
+    .container { max-width: 1280px; margin: 0 auto; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    h1 { font-size: 1.35rem; margin: 0; color: var(--accent); }
+    .sub { font-size: 0.85rem; color: var(--muted); }
+    .file-box { background: var(--card); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+      background: var(--card);
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    input, select {
+      background: #0f172a; color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 10px; font-size: 0.9rem;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 0.88rem; }
+    .stat-pill { background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px; }
+    .table-wrap { overflow-x: auto; background: var(--card); border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #162032; color: var(--muted); font-weight: 600; position: sticky; top: 0; }
+    tr:hover { background: rgba(56, 189, 248, 0.06); }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .b-acik { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+    .b-tamam { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+    .b-uygun { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+    .b-sinir { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .b-zor { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.88rem; }
+    button {
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+      padding: 7px 14px; border-radius: 6px; cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>KPSS Ana Hafıza & Taban Puan Tahmin Sistemi</h1>
+      <div class="sub">2018–2026 Tekilleştirilmiş Atama Verisi + XGBoost/LightGBM v3 Tahminleri (MAE: ±2,32)</div>
+    </div>
+    <div class="file-box">
+      <label for="jsonFile">Yerel JSON Yükle (Opsiyonel): </label>
+      <input type="file" id="jsonFile" accept=".json" />
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="field">
+      <label>Durum</label>
+      <select id="fDurum">
+        <option value="ALL">Tümü (Geçmiş + Açık İlan)</option>
+        <option value="Açık İlan (ML Tahmin)">Sadece Açık İlanlar (ML Tahmin)</option>
+        <option value="Tamamlanan Atama">Tamamlanan Atamalar</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>KPSS Puanınız (Örn: 82.48)</label>
+      <input type="number" id="fPuan" step="0.01" placeholder="Puanınızı girin..." />
+    </div>
+    <div class="field">
+      <label>Bana Uyan Kodlar (Virgülle)</label>
+      <input type="text" id="fKodlarim" placeholder="Örn: 2001, 2061, 6225" />
+    </div>
+    <div class="field">
+      <label>Kurum / Ünvan / Kod Ara</label>
+      <input type="text" id="fArama" placeholder="Örn: Tarım, Memur, 2001..." />
+    </div>
+    <div class="field">
+      <label>İl</label>
+      <select id="fIl"><option value="">Tüm İller</option></select>
+    </div>
+    <div class="field">
+      <label>Sıralama</label>
+      <select id="fSirala">
+        <option value="puan_asc">Puan (En Düşük → En Yüksek)</option>
+        <option value="puan_desc">Puan (En Yüksek → En Düşük)</option>
+        <option value="tarih_desc">Atama Tarihi (En Yeni)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="stats" id="statsBar">Veri yükleniyor...</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Durum</th>
+          <th>Dönem</th>
+          <th>Kurum</th>
+          <th>Ünvan</th>
+          <th>İl</th>
+          <th>Kadro</th>
+          <th>Taban / Tahmin</th>
+          <th>Durum Analizi</th>
+          <th>Nitelik Kodları</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button id="prevBtn">← Önceki</button>
+    <span id="pageInfo">Sayfa 1</span>
+    <button id="nextBtn">Sonraki →</button>
+  </div>
+</div>
+
+<script>
+  let rawData = [];
+  let filtered = [];
+  let page = 1;
+  const perPage = 50;
+
+  async function init() {
+    try {
+      const res = await fetch('./kpss_web_veri.json');
+      if (res.ok) {
+        rawData = await res.json();
+        setupFilters();
+        applyFilters();
+      } else {
+        document.getElementById('statsBar').innerText = 'Otomatik JSON bulunamadı. Sağ üstten kpss_web_veri.json dosyasını seçin.';
+      }
+    } catch (e) {
+      document.getElementById('statsBar').innerText = 'Yerel mod: Sağ üstten kpss_web_veri.json dosyasını seçerek başlatın.';
+    }
+  }
+
+  document.getElementById('jsonFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      rawData = JSON.parse(ev.target.result);
+      setupFilters();
+      applyFilters();
+    };
+    reader.readAsText(file, 'utf-8');
+  });
+
+  function setupFilters() {
+    const iller = [...new Set(rawData.map(r => r.il).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+    const sel = document.getElementById('fIl');
+    sel.innerHTML = '<option value="">Tüm İller</option>' + iller.map(il => `<option value="${il}">${il}</option>`).join('');
+  }
+
+  function applyFilters() {
+    const durum = document.getElementById('fDurum').value;
+    const adayPuan = parseFloat(document.getElementById('fPuan').value);
+    const arama = document.getElementById('fArama').value.trim().toLocaleLowerCase('tr');
+    const il = document.getElementById('fIl').value;
+    const sirala = document.getElementById('fSirala').value;
+
+    const benimKodlar = new Set(
+      document.getElementById('fKodlarim').value
+        .split(/[\s,;]+/)
+        .map(k => k.trim())
+        .filter(k => /^\d{4}$/.test(k))
+    );
+
+    filtered = rawData.filter(r => {
+      if (durum !== 'ALL' && r.durum !== durum) return false;
+      if (il && r.il !== il) return false;
+      if (arama) {
+        const birlesik = `${r.kurum} ${r.unvan} ${r.il} ${r.nitelikler} ${r.atama_tarihi}`.toLocaleLowerCase('tr');
+        if (!birlesik.includes(arama)) return false;
+      }
+      if (benimKodlar.size > 0) {
+        const ilanKodlari = (r.nitelikler || '').match(/\b\d{4}\b/g) || [];
+        if (ilanKodlari.length > 0 && !ilanKodlari.every(k => benimKodlar.has(k))) return false;
+      }
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      const pa = a.aktif_puan ?? 999;
+      const pb = b.aktif_puan ?? 999;
+      if (sirala === 'puan_asc') return pa - pb;
+      if (sirala === 'puan_desc') return (b.aktif_puan ?? -1) - (a.aktif_puan ?? -1);
+      return String(b.atama_tarihi).localeCompare(String(a.atama_tarihi));
+    });
+
+    page = 1;
+    render(adayPuan);
+  }
+
+  function render(adayPuan) {
+    const start = (page - 1) * perPage;
+    const slice = filtered.slice(start, start + perPage);
+    const tbody = document.getElementById('tbody');
+
+    tbody.innerHTML = slice.map(r => {
+      const p = r.aktif_puan;
+      const isAcik = r.durum.includes('Açık');
+      let analizHtml = '<span class="muted">—</span>';
+
+      if (!isNaN(adayPuan) && p !== null) {
+        const fark = adayPuan - p;
+        const farkStr = (fark >= 0 ? '+' : '') + fark.toFixed(2);
+        if (fark >= 2.3) analizHtml = `<span class="badge b-uygun">Uygun (${farkStr})</span>`;
+        else if (fark >= -2.3) analizHtml = `<span class="badge b-sinir">Sınırda (${farkStr})</span>`;
+        else analizHtml = `<span class="badge b-zor">Yüksek (${farkStr})</span>`;
+      }
+
+      return `<tr>
+        <td><span class="badge ${isAcik ? 'b-acik' : 'b-tamam'}">${isAcik ? 'ML Tahmin' : 'Atama'}</span></td>
+        <td>${r.atama_tarihi || ''}</td>
+        <td>${r.kurum || ''}</td>
+        <td>${r.unvan || ''}</td>
+        <td>${r.il || ''}</td>
+        <td>${r.kadro ?? ''}</td>
+        <td><strong>${p !== null ? p.toFixed(3) : '—'}</strong></td>
+        <td>${analizHtml}</td>
+        <td>${r.nitelikler || ''}</td>
+      </tr>`;
+    }).join('');
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+    document.getElementById('statsBar').innerHTML = `
+      <span class="stat-pill">Filtrelenen Kadro: <strong>${filtered.length}</strong></span>
+      <span class="stat-pill">Toplam Kontenjan: <strong>${filtered.reduce((s, r) => s + (r.kadro || 0), 0)}</strong></span>
+    `;
+    document.getElementById('pageInfo').innerText = `Sayfa ${page} / ${totalPages}`;
+    document.getElementById('prevBtn').disabled = page <= 1;
+    document.getElementById('nextBtn').disabled = page >= totalPages;
+  }
+
+  ['fDurum', 'fPuan', 'fKodlarim', 'fArama', 'fIl', 'fSirala'].forEach(id => {
+    document.getElementById(id).addEventListener('input', applyFilters);
+  });
+  document.getElementById('prevBtn').addEventListener('click', () => { page--; render(parseFloat(document.getElementById('fPuan').value)); });
+  document.getElementById('nextBtn').addEventListener('click', () => { page++; render(parseFloat(document.getElementById('fPuan').value)); });
+
+  init();
+</script>
+</body>
+</html>
