@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KPSS Ana Hafıza & Taban Puan Tahmin Robotu</title>
+  <title>KPSS Ana Hafıza & Taban Puan Tahmin Robotu (v4)</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -17,43 +17,43 @@
       --red: #ef4444;
     }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: var(--bg); color: var(--text); padding: 16px; }
-    .container { max-width: 1280px; margin: 0 auto; }
-    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
-    h1 { font-size: 1.35rem; margin: 0; color: var(--accent); }
-    .sub { font-size: 0.85rem; color: var(--muted); }
-    .file-box { background: var(--card); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 14px; }
+    .container { max-width: 1340px; margin: 0 auto; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    h1 { font-size: 1.3rem; margin: 0; color: var(--accent); }
+    .sub { font-size: 0.83rem; color: var(--muted); margin-top: 2px; }
+    .file-box { background: var(--card); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.83rem; }
     .filters {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
       gap: 10px;
       background: var(--card);
       padding: 14px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .field { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    label { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
     input, select {
       background: #0f172a; color: var(--text); border: 1px solid var(--border);
-      border-radius: 6px; padding: 8px 10px; font-size: 0.9rem;
+      border-radius: 6px; padding: 8px 10px; font-size: 0.88rem;
     }
     input:focus, select:focus { outline: none; border-color: var(--accent); }
-    .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 0.88rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; }
     .stat-pill { background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px; }
     .table-wrap { overflow-x: auto; background: var(--card); border-radius: 10px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { background: #162032; color: var(--muted); font-weight: 600; position: sticky; top: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #162032; color: var(--muted); font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
     tr:hover { background: rgba(56, 189, 248, 0.06); }
-    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; display: inline-block; white-space: nowrap; }
     .b-acik { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
     .b-tamam { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
     .b-uygun { background: rgba(34, 197, 94, 0.18); color: #86efac; }
     .b-sinir { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
     .b-zor { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
-    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.88rem; }
+    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.86rem; }
     button {
       background: var(--card); color: var(--text); border: 1px solid var(--border);
       padding: 7px 14px; border-radius: 6px; cursor: pointer;
@@ -65,18 +65,26 @@
 <div class="container">
   <header>
     <div>
-      <h1>KPSS Ana Hafıza & Taban Puan Tahmin Sistemi</h1>
-      <div class="sub">2018–2026 Tekilleştirilmiş Atama Verisi + XGBoost/LightGBM v3 Tahminleri (MAE: ±2,32)</div>
+      <h1>KPSS Ana Hafıza & Taban Puan Tahmin Sistemi (v4)</h1>
+      <div class="sub">Ortaöğretim + Önlisans (50.775 Kadro) | MAE: Ortaöğretim ±2,20 • Önlisans ±1,61</div>
     </div>
     <div class="file-box">
-      <label for="jsonFile">Yerel JSON Yükle (Opsiyonel): </label>
+      <label for="jsonFile">Yerel JSON Seç (Opsiyonel): </label>
       <input type="file" id="jsonFile" accept=".json" />
     </div>
   </header>
 
   <div class="filters">
     <div class="field">
-      <label>Durum</label>
+      <label>Öğrenim Düzeyi</label>
+      <select id="fMezuniyet">
+        <option value="ALL">Tümü (Ortaöğretim + Önlisans)</option>
+        <option value="Ortaöğretim">Ortaöğretim</option>
+        <option value="Önlisans">Önlisans</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Kadro Durumu</label>
       <select id="fDurum">
         <option value="ALL">Tümü (Geçmiş + Açık İlan)</option>
         <option value="Açık İlan (ML Tahmin)">Sadece Açık İlanlar (ML Tahmin)</option>
@@ -89,11 +97,11 @@
     </div>
     <div class="field">
       <label>Bana Uyan Kodlar (Virgülle)</label>
-      <input type="text" id="fKodlarim" placeholder="Örn: 2001, 2061, 6225" />
+      <input type="text" id="fKodlarim" placeholder="Örn: 2001, 2061 veya 3001, 3249" />
     </div>
     <div class="field">
       <label>Kurum / Ünvan / Kod Ara</label>
-      <input type="text" id="fArama" placeholder="Örn: Tarım, Memur, 2001..." />
+      <input type="text" id="fArama" placeholder="Örn: Makine, Tarım, Teknisyen..." />
     </div>
     <div class="field">
       <label>İl</label>
@@ -104,7 +112,7 @@
       <select id="fSirala">
         <option value="puan_asc">Puan (En Düşük → En Yüksek)</option>
         <option value="puan_desc">Puan (En Yüksek → En Düşük)</option>
-        <option value="tarih_desc">Atama Tarihi (En Yeni)</option>
+        <option value="tarih_desc">Atama Dönemi (En Yeni)</option>
       </select>
     </div>
   </div>
@@ -115,6 +123,7 @@
     <table>
       <thead>
         <tr>
+          <th>Düzey</th>
           <th>Durum</th>
           <th>Dönem</th>
           <th>Kurum</th>
@@ -177,6 +186,7 @@
   }
 
   function applyFilters() {
+    const mezuniyet = document.getElementById('fMezuniyet').value;
     const durum = document.getElementById('fDurum').value;
     const adayPuan = parseFloat(document.getElementById('fPuan').value);
     const arama = document.getElementById('fArama').value.trim().toLocaleLowerCase('tr');
@@ -191,6 +201,7 @@
     );
 
     filtered = rawData.filter(r => {
+      if (mezuniyet !== 'ALL' && r.mezuniyet !== mezuniyet) return false;
       if (durum !== 'ALL' && r.durum !== durum) return false;
       if (il && r.il !== il) return false;
       if (arama) {
@@ -223,18 +234,20 @@
 
     tbody.innerHTML = slice.map(r => {
       const p = r.aktif_puan;
-      const isAcik = r.durum.includes('Açık');
-      let analizHtml = '<span class="muted">—</span>';
+      const isAcik = r.durum && r.durum.includes('Açık');
+      const maeBand = r.mezuniyet === 'Önlisans' ? 1.61 : 2.20;
+      let analizHtml = '<span style="color:var(--muted)">—</span>';
 
       if (!isNaN(adayPuan) && p !== null) {
         const fark = adayPuan - p;
         const farkStr = (fark >= 0 ? '+' : '') + fark.toFixed(2);
-        if (fark >= 2.3) analizHtml = `<span class="badge b-uygun">Uygun (${farkStr})</span>`;
-        else if (fark >= -2.3) analizHtml = `<span class="badge b-sinir">Sınırda (${farkStr})</span>`;
+        if (fark >= maeBand) analizHtml = `<span class="badge b-uygun">Uygun (${farkStr})</span>`;
+        else if (fark >= -maeBand) analizHtml = `<span class="badge b-sinir">Sınırda (${farkStr})</span>`;
         else analizHtml = `<span class="badge b-zor">Yüksek (${farkStr})</span>`;
       }
 
       return `<tr>
+        <td>${r.mezuniyet || ''}</td>
         <td><span class="badge ${isAcik ? 'b-acik' : 'b-tamam'}">${isAcik ? 'ML Tahmin' : 'Atama'}</span></td>
         <td>${r.atama_tarihi || ''}</td>
         <td>${r.kurum || ''}</td>
@@ -248,16 +261,20 @@
     }).join('');
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+    const puanli = filtered.filter(r => r.aktif_puan !== null);
+    const ortPuan = puanli.length ? (puanli.reduce((s, r) => s + r.aktif_puan, 0) / puanli.length).toFixed(2) : '—';
+
     document.getElementById('statsBar').innerHTML = `
       <span class="stat-pill">Filtrelenen Kadro: <strong>${filtered.length}</strong></span>
       <span class="stat-pill">Toplam Kontenjan: <strong>${filtered.reduce((s, r) => s + (r.kadro || 0), 0)}</strong></span>
+      <span class="stat-pill">Ortalama Taban Puan: <strong>${ortPuan}</strong></span>
     `;
     document.getElementById('pageInfo').innerText = `Sayfa ${page} / ${totalPages}`;
     document.getElementById('prevBtn').disabled = page <= 1;
     document.getElementById('nextBtn').disabled = page >= totalPages;
   }
 
-  ['fDurum', 'fPuan', 'fKodlarim', 'fArama', 'fIl', 'fSirala'].forEach(id => {
+  ['fMezuniyet', 'fDurum', 'fPuan', 'fKodlarim', 'fArama', 'fIl', 'fSirala'].forEach(id => {
     document.getElementById(id).addEventListener('input', applyFilters);
   });
   document.getElementById('prevBtn').addEventListener('click', () => { page--; render(parseFloat(document.getElementById('fPuan').value)); });
