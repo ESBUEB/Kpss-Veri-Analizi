@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KPSS Ana Hafıza & Taban Puan Tahmin Robotu (v4)</title>
+  <title>KPSS Merkezi Atama Tahmin & Simülasyon Sistemi</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
+      --bg: #0b1120;
+      --card: #131c31;
+      --card-alt: #19243e;
+      --border: #263554;
       --text: #f1f5f9;
       --muted: #94a3b8;
       --accent: #38bdf8;
@@ -18,152 +19,283 @@
     }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { margin: 0; background: var(--bg); color: var(--text); padding: 14px; }
-    .container { max-width: 1340px; margin: 0 auto; }
-    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .container { max-width: 1380px; margin: 0 auto; }
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
     h1 { font-size: 1.3rem; margin: 0; color: var(--accent); }
-    .sub { font-size: 0.83rem; color: var(--muted); margin-top: 2px; }
-    .file-box { background: var(--card); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.83rem; }
-    .filters {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-      gap: 10px;
-      background: var(--card);
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin-bottom: 12px;
+    .sub { font-size: 0.83rem; color: var(--muted); margin-top: 3px; }
+    .file-box { background: var(--card); border: 1px dashed var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.82rem; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      background: var(--card); color: var(--muted); border: 1px solid var(--border);
+      padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;
+    }
+    .tab-btn.active { background: var(--accent); color: #0b1120; border-color: var(--accent); }
+    .panel {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 10px; background: var(--card); padding: 14px; border-radius: 10px;
+      border: 1px solid var(--border); margin-bottom: 14px;
     }
     .field { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+    label { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
     input, select {
-      background: #0f172a; color: var(--text); border: 1px solid var(--border);
-      border-radius: 6px; padding: 8px 10px; font-size: 0.88rem;
+      background: #0b1120; color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 10px; font-size: 0.88rem; width: 100%;
     }
     input:focus, select:focus { outline: none; border-color: var(--accent); }
-    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; }
-    .stat-pill { background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px; }
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px; margin-bottom: 14px;
+    }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    }
+    .kpi-title { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+    .kpi-val { font-size: 1.35rem; font-weight: 700; margin-top: 4px; color: var(--text); }
+    .kpi-sub { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .region-bar {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px; margin-bottom: 14px;
+    }
+    .reg-card {
+      background: var(--card-alt); border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 11px; cursor: pointer; transition: 0.15s;
+    }
+    .reg-card:hover, .reg-card.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
+    .reg-name { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+    .reg-score { font-size: 1.05rem; font-weight: 700; color: var(--accent); margin-top: 2px; }
+    .reg-count { font-size: 0.73rem; color: var(--muted); }
     .table-wrap { overflow-x: auto; background: var(--card); border-radius: 10px; border: 1px solid var(--border); }
     table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { background: #162032; color: var(--muted); font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
-    tr:hover { background: rgba(56, 189, 248, 0.06); }
+    th { background: #16223b; color: var(--muted); font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
+    tr:hover { background: rgba(56, 189, 248, 0.05); }
     .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; display: inline-block; white-space: nowrap; }
-    .b-acik { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
-    .b-tamam { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
     .b-uygun { background: rgba(34, 197, 94, 0.18); color: #86efac; }
     .b-sinir { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
     .b-zor { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
-    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.86rem; }
-    button {
+    .b-info { background: rgba(56, 189, 248, 0.16); color: #7dd3fc; }
+    .kod-chip {
+      display: inline-block; background: #0b1120; border: 1px solid var(--border);
+      padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin: 1px; cursor: pointer;
+    }
+    .kod-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.85rem; }
+    button.nav {
       background: var(--card); color: var(--text); border: 1px solid var(--border);
       padding: 7px 14px; border-radius: 6px; cursor: pointer;
     }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.nav:disabled { opacity: 0.4; cursor: not-allowed; }
+    .hidden { display: none; }
+    .toast {
+      position: fixed; bottom: 16px; right: 16px; max-width: 420px; background: #1e293b;
+      border: 1px solid var(--accent); padding: 12px 14px; border-radius: 10px;
+      font-size: 0.84rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 99;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <header>
     <div>
-      <h1>KPSS Ana Hafıza & Taban Puan Tahmin Sistemi (v4)</h1>
-      <div class="sub">Ortaöğretim + Önlisans (50.775 Kadro) | MAE: Ortaöğretim ±2,20 • Önlisans ±1,61</div>
+      <h1>KPSS Merkezi Atama Tahmin & Simülasyon Sistemi</h1>
+      <div class="sub">Geçmiş Merkezi Veriler + Bölge/Kurum/Dönem Katsayılarıyla Canlı Kapanış Puanı Hesaplayıcı</div>
     </div>
     <div class="file-box">
-      <label for="jsonFile">Yerel JSON Seç (Opsiyonel): </label>
+      <label for="jsonFile">Yerel Veri Dosyası (Opsiyonel): </label>
       <input type="file" id="jsonFile" accept=".json" />
     </div>
   </header>
 
-  <div class="filters">
-    <div class="field">
-      <label>Öğrenim Düzeyi</label>
-      <select id="fMezuniyet">
-        <option value="ALL">Tümü (Ortaöğretim + Önlisans)</option>
-        <option value="Ortaöğretim">Ortaöğretim</option>
-        <option value="Önlisans">Önlisans</option>
-      </select>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabSimBtn">1. Canlı Merkezi Atama Tahmin Motoru</button>
+    <button class="tab-btn" id="tabArsivBtn">2. Geçmiş Atamalar & Açık İlan Arşivi (50.775)</button>
+  </div>
+
+  <!-- MOD 1: CANLI MERKEZİ ATAMA TAHMİN MOTORU -->
+  <div id="simView">
+    <div class="panel">
+      <div class="field">
+        <label>1. Öğrenim Düzeyi</label>
+        <select id="sMezuniyet">
+          <option value="Önlisans">Önlisans</option>
+          <option value="Ortaöğretim">Ortaöğretim</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>2. Branş Ara (İsim veya Kod)</label>
+        <input type="text" id="sBransAra" placeholder="Örn: Makine, 3249, 2001..." />
+      </div>
+      <div class="field">
+        <label>3. Branş / Bölüm Seçin</label>
+        <select id="sBransSec"></select>
+      </div>
+      <div class="field">
+        <label>4. Önündeki Atama Dönemi</label>
+        <select id="sDonem">
+          <option value="0">2026/2 Merkezi (17-24 Aralık 2026 • 1. Atama)</option>
+          <option value="1">2027/1 Merkezi (Temmuz 2027 • 2. Atama)</option>
+          <option value="2">2027/2 Merkezi (Aralık 2027 • 3. Atama)</option>
+          <option value="3">2028/1 Merkezi (Temmuz 2028 • 4. Atama)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>5. Bölge</label>
+        <select id="sBolge">
+          <option value="">Tüm Türkiye (7 Bölge)</option>
+          <option value="Marmara">Marmara</option>
+          <option value="Ege">Ege</option>
+          <option value="Akdeniz">Akdeniz</option>
+          <option value="İç Anadolu">İç Anadolu</option>
+          <option value="Karadeniz">Karadeniz</option>
+          <option value="Doğu Anadolu">Doğu Anadolu</option>
+          <option value="Güneydoğu Anadolu">Güneydoğu Anadolu</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>6. İl</label>
+        <select id="sIl"><option value="">Tüm İller</option></select>
+      </div>
+      <div class="field">
+        <label>7. Kurum / Ünvan Filtresi</label>
+        <input type="text" id="sKurumAra" placeholder="Örn: Üniversite, TCDD, DHMİ..." />
+      </div>
+      <div class="field">
+        <label>8. Kontenjan Senaryosu</label>
+        <select id="sKontenjan">
+          <option value="HIST">Kurumun Kendi Geçmiş Kadrosu</option>
+          <option value="1">1 Kadro (Tekli Alım)</option>
+          <option value="3">3 Kadro (Orta Alım)</option>
+          <option value="10">10 Kadro (Geniş Alım)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>9. KPSS Puanınız (Örn: 82.48)</label>
+        <input type="number" id="sPuan" step="0.01" placeholder="Puanınızı girin..." />
+      </div>
     </div>
-    <div class="field">
-      <label>Kadro Durumu</label>
-      <select id="fDurum">
-        <option value="ALL">Tümü (Geçmiş + Açık İlan)</option>
-        <option value="Açık İlan (ML Tahmin)">Sadece Açık İlanlar (ML Tahmin)</option>
-        <option value="Tamamlanan Atama">Tamamlanan Atamalar</option>
-      </select>
+
+    <div class="summary-grid" id="simKpiGrid"></div>
+    <div class="region-bar" id="regionCards"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Kurum</th>
+            <th>Ünvan</th>
+            <th>İl / Bölge</th>
+            <th>Senaryo Kadro</th>
+            <th>Geçmiş Son Puan</th>
+            <th>Tahmini Kapanış</th>
+            <th>Puan Durumunuz</th>
+            <th>Nitelik Kodları (Tıkla)</th>
+          </tr>
+        </thead>
+        <tbody id="simTbody"></tbody>
+      </table>
     </div>
-    <div class="field">
-      <label>KPSS Puanınız (Örn: 82.48)</label>
-      <input type="number" id="fPuan" step="0.01" placeholder="Puanınızı girin..." />
-    </div>
-    <div class="field">
-      <label>Bana Uyan Kodlar (Virgülle)</label>
-      <input type="text" id="fKodlarim" placeholder="Örn: 2001, 2061 veya 3001, 3249" />
-    </div>
-    <div class="field">
-      <label>Kurum / Ünvan / Kod Ara</label>
-      <input type="text" id="fArama" placeholder="Örn: Makine, Tarım, Teknisyen..." />
-    </div>
-    <div class="field">
-      <label>İl</label>
-      <select id="fIl"><option value="">Tüm İller</option></select>
-    </div>
-    <div class="field">
-      <label>Sıralama</label>
-      <select id="fSirala">
-        <option value="puan_asc">Puan (En Düşük → En Yüksek)</option>
-        <option value="puan_desc">Puan (En Yüksek → En Düşük)</option>
-        <option value="tarih_desc">Atama Dönemi (En Yeni)</option>
-      </select>
+    <div class="pagination">
+      <button class="nav" id="simPrev">← Önceki</button>
+      <span id="simPageInfo">Sayfa 1</span>
+      <button class="nav" id="simNext">Sonraki →</button>
     </div>
   </div>
 
-  <div class="stats" id="statsBar">Veri yükleniyor...</div>
+  <!-- MOD 2: GEÇMİŞ ATAMALAR & AÇIK İLAN ARŞİVİ -->
+  <div id="arsivView" class="hidden">
+    <div class="panel">
+      <div class="field">
+        <label>Öğrenim Düzeyi</label>
+        <select id="aMez">
+          <option value="ALL">Tümü (50.775)</option>
+          <option value="Önlisans">Önlisans</option>
+          <option value="Ortaöğretim">Ortaöğretim</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Alım Türü</label>
+        <select id="aTur">
+          <option value="ALL">Merkezi + Sözleşmeli</option>
+          <option value="1">Sadece ÖSYM Merkezi Atama</option>
+          <option value="0">Bakanlık / Kurumsal Alımlar</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Kurum / Ünvan / Kod Ara</label>
+        <input type="text" id="aAra" placeholder="Örn: Makine, 3001, 2061..." />
+      </div>
+      <div class="field">
+        <label>Bölge</label>
+        <select id="aBolge">
+          <option value="">Tüm Bölgeler</option>
+          <option value="Marmara">Marmara</option>
+          <option value="Ege">Ege</option>
+          <option value="Akdeniz">Akdeniz</option>
+          <option value="İç Anadolu">İç Anadolu</option>
+          <option value="Karadeniz">Karadeniz</option>
+          <option value="Doğu Anadolu">Doğu Anadolu</option>
+          <option value="Güneydoğu Anadolu">Güneydoğu Anadolu</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Sıralama</label>
+        <select id="aSirala">
+          <option value="puan_asc">Puan (En Düşük → En Yüksek)</option>
+          <option value="puan_desc">Puan (En Yüksek → En Düşük)</option>
+        </select>
+      </div>
+    </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Düzey</th>
-          <th>Durum</th>
-          <th>Dönem</th>
-          <th>Kurum</th>
-          <th>Ünvan</th>
-          <th>İl</th>
-          <th>Kadro</th>
-          <th>Taban / Tahmin</th>
-          <th>Durum Analizi</th>
-          <th>Nitelik Kodları</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-  <div class="pagination">
-    <button id="prevBtn">← Önceki</button>
-    <span id="pageInfo">Sayfa 1</span>
-    <button id="nextBtn">Sonraki →</button>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Düzey</th>
+            <th>Tür</th>
+            <th>Dönem</th>
+            <th>Kurum</th>
+            <th>Ünvan</th>
+            <th>İl / Bölge</th>
+            <th>Kadro</th>
+            <th>Taban / Tahmin</th>
+            <th>Nitelik Kodları</th>
+          </tr>
+        </thead>
+        <tbody id="arsivTbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="nav" id="aPrev">← Önceki</button>
+      <span id="aPageInfo">Sayfa 1</span>
+      <button class="nav" id="aNext">Sonraki →</button>
+    </div>
   </div>
 </div>
 
+<div id="toast" class="toast hidden"></div>
+
 <script>
-  let rawData = [];
-  let filtered = [];
-  let page = 1;
-  const perPage = 50;
+  let DATA = null;
+  let simRows = [];
+  let simPage = 1;
+  let arsivRows = [];
+  let arsivPage = 1;
+  const PER_PAGE = 50;
 
   async function init() {
     try {
-      const res = await fetch('./kpss_web_veri.json');
+      const res = await fetch('./kpss_sistem_verisi.json');
       if (res.ok) {
-        rawData = await res.json();
-        setupFilters();
-        applyFilters();
+        DATA = await res.json();
+        baslat();
       } else {
-        document.getElementById('statsBar').innerText = 'Otomatik JSON bulunamadı. Sağ üstten kpss_web_veri.json dosyasını seçin.';
+        document.getElementById('simKpiGrid').innerHTML = '<div class="kpi">Sağ üstten <b>kpss_sistem_verisi.json</b> dosyasını yükleyin.</div>';
       }
     } catch (e) {
-      document.getElementById('statsBar').innerText = 'Yerel mod: Sağ üstten kpss_web_veri.json dosyasını seçerek başlatın.';
+      document.getElementById('simKpiGrid').innerHTML = '<div class="kpi">Yerel mod: Sağ üstten <b>kpss_sistem_verisi.json</b> dosyasını seçin.</div>';
     }
   }
 
@@ -172,113 +304,270 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      rawData = JSON.parse(ev.target.result);
-      setupFilters();
-      applyFilters();
+      DATA = JSON.parse(ev.target.result);
+      baslat();
     };
     reader.readAsText(file, 'utf-8');
   });
 
-  function setupFilters() {
-    const iller = [...new Set(rawData.map(r => r.il).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
-    const sel = document.getElementById('fIl');
-    sel.innerHTML = '<option value="">Tüm İller</option>' + iller.map(il => `<option value="${il}">${il}</option>`).join('');
+  function baslat() {
+    bransListesiDoldur();
+    ilListesiDoldur();
+    simulasyonHesapla();
+    arsivFiltrele();
   }
 
-  function applyFilters() {
-    const mezuniyet = document.getElementById('fMezuniyet').value;
-    const durum = document.getElementById('fDurum').value;
-    const adayPuan = parseFloat(document.getElementById('fPuan').value);
-    const arama = document.getElementById('fArama').value.trim().toLocaleLowerCase('tr');
-    const il = document.getElementById('fIl').value;
-    const sirala = document.getElementById('fSirala').value;
+  function bransListesiDoldur() {
+    if (!DATA) return;
+    const mez = document.getElementById('sMezuniyet').value;
+    const ara = document.getElementById('sBransAra').value.trim().toLocaleLowerCase('tr');
+    const liste = DATA.branslar.filter(b => {
+      if (b.mezuniyet !== mez) return false;
+      if (!ara) return true;
+      return `${b.kod} ${b.ad}`.toLocaleLowerCase('tr').includes(ara);
+    });
+    const sel = document.getElementById('sBransSec');
+    sel.innerHTML = liste.map(b =>
+      `<option value="${b.kod}">${b.kod} - ${b.ad.slice(0, 48)} (${b.kadro_sayisi} kadro)</option>`
+    ).join('');
+  }
 
-    const benimKodlar = new Set(
-      document.getElementById('fKodlarim').value
-        .split(/[\s,;]+/)
-        .map(k => k.trim())
-        .filter(k => /^\d{4}$/.test(k))
-    );
+  function ilListesiDoldur() {
+    if (!DATA) return;
+    const bolge = document.getElementById('sBolge').value;
+    const iller = [...new Set(
+      DATA.sablonlar
+        .filter(s => (!bolge || s[4] === bolge) && s[3] !== 'Bilinmiyor')
+        .map(s => s[3])
+    )].sort((a, b) => a.localeCompare(b, 'tr'));
 
-    filtered = rawData.filter(r => {
-      if (mezuniyet !== 'ALL' && r.mezuniyet !== mezuniyet) return false;
-      if (durum !== 'ALL' && r.durum !== durum) return false;
-      if (il && r.il !== il) return false;
-      if (arama) {
-        const birlesik = `${r.kurum} ${r.unvan} ${r.il} ${r.nitelikler} ${r.atama_tarihi}`.toLocaleLowerCase('tr');
-        if (!birlesik.includes(arama)) return false;
-      }
-      if (benimKodlar.size > 0) {
-        const ilanKodlari = (r.nitelikler || '').match(/\b\d{4}\b/g) || [];
-        if (ilanKodlari.length > 0 && !ilanKodlari.every(k => benimKodlar.has(k))) return false;
-      }
+    document.getElementById('sIl').innerHTML =
+      '<option value="">Tüm İller</option>' + iller.map(il => `<option value="${il}">${il}</option>`).join('');
+  }
+
+  function kodChips(nitelikStr) {
+    const kodlar = (nitelikStr || '').match(/\b\d{4}\b/g) || [];
+    return kodlar.map(k => `<span class="kod-chip" onclick="kodAcikla('${k}')">${k}</span>`).join(' ');
+  }
+
+  window.kodAcikla = function(kod) {
+    const aciklama = (DATA && DATA.sozluk && DATA.sozluk[kod]) ? DATA.sozluk[kod] : 'Özel / Bölüm Nitelik Kodu';
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<strong>Kod ${kod}:</strong> ${aciklama}`;
+    toast.classList.remove('hidden');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toast.classList.add('hidden'), 4500);
+  };
+
+  function simulasyonHesapla() {
+    if (!DATA) return;
+    const mez = document.getElementById('sMezuniyet').value;
+    const mezId = mez === 'Önlisans' ? 0 : 1;
+    const kod = document.getElementById('sBransSec').value;
+    const donemAdim = parseInt(document.getElementById('sDonem').value, 10);
+    const seciliBolge = document.getElementById('sBolge').value;
+    const seciliIl = document.getElementById('sIl').value;
+    const kurumAra = document.getElementById('sKurumAra').value.trim().toLocaleLowerCase('tr');
+    const kontSenaryo = document.getElementById('sKontenjan').value;
+    const adayPuan = parseFloat(document.getElementById('sPuan').value);
+
+    const brans = DATA.branslar.find(b => b.mezuniyet === mez && b.kod === kod);
+    if (!brans) return;
+
+    const regex = new RegExp(`\\b${kod}\\b`);
+    const esneklik = DATA.meta.kontenjan_esneklik || -0.95;
+
+    // Seçilen branşın tüm merkezi kadro şablonları
+    const tumBransSablonlari = DATA.sablonlar.filter(s => s[0] === mezId && regex.test(s[8]));
+
+    const hesaplanmis = tumBransSablonlari.map(s => {
+      const kurum = s[1];
+      const unvan = s[2];
+      const il = s[3];
+      const bolge = s[4];
+      const gecmisKadro = s[5] || 1;
+      const sonPuan = s[6];
+      const ozelKisit = s[7];
+      const nitelikler = s[8];
+
+      const aktifKadro = kontSenaryo === 'HIST' ? gecmisKadro : parseInt(kontSenaryo, 10);
+      const kurumFark = DATA.kurum_farklari[kurum] || 0;
+      const ilFark = DATA.il_farklari[il] ?? (DATA.bolge_farklari[bolge] || 0);
+      const kisitFark = ozelKisit === 1 ? -2.4 : 0;
+      const donemFark = donemAdim * brans.donem_dususu;
+      const kadroFark = esneklik * (Math.log1p(aktifKadro) - Math.log1p(1));
+
+      // Mekanizma: Öğrenilmiş katsayı modeli + kurumun kendi geçmiş puan çıpası
+      const modelPuan = brans.baz_puan + (0.6 * kurumFark) + (0.55 * ilFark) + kisitFark + donemFark + kadroFark;
+      const hibritTahmin = Math.min(99.5, Math.max(55.0, (0.65 * modelPuan) + (0.35 * (sonPuan + donemFark))));
+
+      return {
+        kurum, unvan, il, bolge, aktifKadro, sonPuan, nitelikler,
+        tahmin: Number(hibritTahmin.toFixed(2))
+      };
+    });
+
+    // 7 Bölge Özet Kartları
+    const bolgeler = ["Marmara", "Ege", "Akdeniz", "İç Anadolu", "Karadeniz", "Doğu Anadolu", "Güneydoğu Anadolu"];
+    document.getElementById('regionCards').innerHTML = bolgeler.map(b => {
+      const bList = hesaplanmis.filter(x => x.bolge === b);
+      const ort = bList.length ? (bList.reduce((acc, x) => acc + x.tahmin, 0) / bList.length).toFixed(2) : '—';
+      const activeCls = seciliBolge === b ? 'selected' : '';
+      return `<div class="reg-card ${activeCls}" onclick="bolgeSec('${b}')">
+        <div class="reg-name">${b}</div>
+        <div class="reg-score">${ort}</div>
+        <div class="reg-count">${bList.length} geçmiş merkez</div>
+      </div>`;
+    }).join('');
+
+    // Filtreleme ve Sıralama
+    simRows = hesaplanmis.filter(r => {
+      if (seciliBolge && r.bolge !== seciliBolge) return false;
+      if (seciliIl && r.il !== seciliIl) return false;
+      if (kurumAra && !`${r.kurum} ${r.unvan} ${r.il}`.toLocaleLowerCase('tr').includes(kurumAra)) return false;
       return true;
-    });
+    }).sort((a, b) => a.tahmin - b.tahmin);
 
-    filtered.sort((a, b) => {
-      const pa = a.aktif_puan ?? 999;
-      const pb = b.aktif_puan ?? 999;
-      if (sirala === 'puan_asc') return pa - pb;
-      if (sirala === 'puan_desc') return (b.aktif_puan ?? -1) - (a.aktif_puan ?? -1);
-      return String(b.atama_tarihi).localeCompare(String(a.atama_tarihi));
-    });
+    const minTahmin = simRows.length ? simRows[0].tahmin.toFixed(2) : '—';
+    const ortTahmin = simRows.length ? (simRows.reduce((s, r) => s + r.tahmin, 0) / simRows.length).toFixed(2) : '—';
+    const guvenEtiket = brans.guven === 'A' ? 'Yüksek İsabet' : (brans.guven === 'B' ? 'Orta İsabet' : 'Geniş Bant');
 
-    page = 1;
-    render(adayPuan);
+    document.getElementById('simKpiGrid').innerHTML = `
+      <div class="kpi">
+        <div class="kpi-title">Seçilen Branş Merkezi Baz Puanı</div>
+        <div class="kpi-val">${brans.baz_puan.toFixed(2)}</div>
+        <div class="kpi-sub">Dönem başı erime: ${brans.donem_dususu} puan</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-title">Simülasyon Taban – Ortalama</div>
+        <div class="kpi-val">${minTahmin} – ${ortTahmin}</div>
+        <div class="kpi-sub">${simRows.length} kurum/şehir pozisyonu</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-title">2025 Kör Test Doğruluk Payı</div>
+        <div class="kpi-val">±${brans.mae.toFixed(2)} puan</div>
+        <div class="kpi-sub">Güven Sınıfı: ${brans.guven} (${guvenEtiket})</div>
+      </div>
+    `;
+
+    simPage = 1;
+    renderSim(adayPuan, brans.mae);
   }
 
-  function render(adayPuan) {
-    const start = (page - 1) * perPage;
-    const slice = filtered.slice(start, start + perPage);
-    const tbody = document.getElementById('tbody');
+  window.bolgeSec = function(b) {
+    const sel = document.getElementById('sBolge');
+    sel.value = sel.value === b ? '' : b;
+    ilListesiDoldur();
+    simulasyonHesapla();
+  };
 
-    tbody.innerHTML = slice.map(r => {
-      const p = r.aktif_puan;
-      const isAcik = r.durum && r.durum.includes('Açık');
-      const maeBand = r.mezuniyet === 'Önlisans' ? 1.61 : 2.20;
-      let analizHtml = '<span style="color:var(--muted)">—</span>';
-
-      if (!isNaN(adayPuan) && p !== null) {
-        const fark = adayPuan - p;
+  function renderSim(adayPuan, mae) {
+    const start = (simPage - 1) * PER_PAGE;
+    const slice = simRows.slice(start, start + PER_PAGE);
+    document.getElementById('simTbody').innerHTML = slice.map(r => {
+      let durumHtml = '<span style="color:var(--muted)">Puan girin</span>';
+      if (!isNaN(adayPuan)) {
+        const fark = adayPuan - r.tahmin;
         const farkStr = (fark >= 0 ? '+' : '') + fark.toFixed(2);
-        if (fark >= maeBand) analizHtml = `<span class="badge b-uygun">Uygun (${farkStr})</span>`;
-        else if (fark >= -maeBand) analizHtml = `<span class="badge b-sinir">Sınırda (${farkStr})</span>`;
-        else analizHtml = `<span class="badge b-zor">Yüksek (${farkStr})</span>`;
+        if (fark >= mae) durumHtml = `<span class="badge b-uygun">Uygun (${farkStr})</span>`;
+        else if (fark >= -mae) durumHtml = `<span class="badge b-sinir">Sınırda (${farkStr})</span>`;
+        else durumHtml = `<span class="badge b-zor">Yüksek (${farkStr})</span>`;
       }
-
       return `<tr>
-        <td>${r.mezuniyet || ''}</td>
-        <td><span class="badge ${isAcik ? 'b-acik' : 'b-tamam'}">${isAcik ? 'ML Tahmin' : 'Atama'}</span></td>
-        <td>${r.atama_tarihi || ''}</td>
-        <td>${r.kurum || ''}</td>
-        <td>${r.unvan || ''}</td>
-        <td>${r.il || ''}</td>
-        <td>${r.kadro ?? ''}</td>
-        <td><strong>${p !== null ? p.toFixed(3) : '—'}</strong></td>
-        <td>${analizHtml}</td>
-        <td>${r.nitelikler || ''}</td>
+        <td>${r.kurum}</td>
+        <td>${r.unvan}</td>
+        <td>${r.il} <span style="color:var(--muted)">(${r.bolge})</span></td>
+        <td>${r.aktifKadro}</td>
+        <td>${r.sonPuan.toFixed(2)}</td>
+        <td><strong style="color:var(--accent)">${r.tahmin.toFixed(2)}</strong></td>
+        <td>${durumHtml}</td>
+        <td>${kodChips(r.nitelikler)}</td>
       </tr>`;
     }).join('');
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-    const puanli = filtered.filter(r => r.aktif_puan !== null);
-    const ortPuan = puanli.length ? (puanli.reduce((s, r) => s + r.aktif_puan, 0) / puanli.length).toFixed(2) : '—';
-
-    document.getElementById('statsBar').innerHTML = `
-      <span class="stat-pill">Filtrelenen Kadro: <strong>${filtered.length}</strong></span>
-      <span class="stat-pill">Toplam Kontenjan: <strong>${filtered.reduce((s, r) => s + (r.kadro || 0), 0)}</strong></span>
-      <span class="stat-pill">Ortalama Taban Puan: <strong>${ortPuan}</strong></span>
-    `;
-    document.getElementById('pageInfo').innerText = `Sayfa ${page} / ${totalPages}`;
-    document.getElementById('prevBtn').disabled = page <= 1;
-    document.getElementById('nextBtn').disabled = page >= totalPages;
+    const totalPages = Math.max(1, Math.ceil(simRows.length / PER_PAGE));
+    document.getElementById('simPageInfo').innerText = `Sayfa ${simPage} / ${totalPages} (${simRows.length} kayıt)`;
+    document.getElementById('simPrev').disabled = simPage <= 1;
+    document.getElementById('simNext').disabled = simPage >= totalPages;
   }
 
-  ['fMezuniyet', 'fDurum', 'fPuan', 'fKodlarim', 'fArama', 'fIl', 'fSirala'].forEach(id => {
-    document.getElementById(id).addEventListener('input', applyFilters);
+  function arsivFiltrele() {
+    if (!DATA) return;
+    const mez = document.getElementById('aMez').value;
+    const tur = document.getElementById('aTur').value;
+    const ara = document.getElementById('aAra').value.trim().toLocaleLowerCase('tr');
+    const bolge = document.getElementById('aBolge').value;
+    const sirala = document.getElementById('aSirala').value;
+
+    arsivRows = DATA.arsiv.filter(r => {
+      const rMez = r[0] === 0 ? 'Önlisans' : 'Ortaöğretim';
+      if (mez !== 'ALL' && rMez !== mez) return false;
+      if (tur !== 'ALL' && String(r[1]) !== tur) return false;
+      if (bolge && r[7] !== bolge) return false;
+      if (ara && !`${r[4]} ${r[5]} ${r[6]} ${r[10]} ${r[3]}`.toLocaleLowerCase('tr').includes(ara)) return false;
+      return true;
+    }).sort((a, b) => sirala === 'puan_asc' ? ((a[9] ?? 999) - (b[9] ?? 999)) : ((b[9] ?? -1) - (a[9] ?? -1)));
+
+    arsivPage = 1;
+    renderArsiv();
+  }
+
+  function renderArsiv() {
+    const start = (arsivPage - 1) * PER_PAGE;
+    const slice = arsivRows.slice(start, start + PER_PAGE);
+    document.getElementById('arsivTbody').innerHTML = slice.map(r => {
+      const rMez = r[0] === 0 ? 'Önlisans' : 'Ortaöğretim';
+      const turBadge = r[2] === 1
+        ? '<span class="badge b-info">Açık İlan (ML)</span>'
+        : (r[1] === 1 ? '<span class="badge b-uygun">Merkezi</span>' : '<span class="badge b-sinir">Sözleşmeli</span>');
+      return `<tr>
+        <td>${rMez}</td>
+        <td>${turBadge}</td>
+        <td>${r[3]}</td>
+        <td>${r[4]}</td>
+        <td>${r[5]}</td>
+        <td>${r[6]} (${r[7]})</td>
+        <td>${r[8]}</td>
+        <td><strong>${r[9] !== null ? r[9].toFixed(2) : '—'}</strong></td>
+        <td>${kodChips(r[10])}</td>
+      </tr>`;
+    }).join('');
+
+    const totalPages = Math.max(1, Math.ceil(arsivRows.length / PER_PAGE));
+    document.getElementById('aPageInfo').innerText = `Sayfa ${arsivPage} / ${totalPages} (${arsivRows.length} kayıt)`;
+    document.getElementById('aPrev').disabled = arsivPage <= 1;
+    document.getElementById('aNext').disabled = arsivPage >= totalPages;
+  }
+
+  // Olay Dinleyicileri
+  document.getElementById('tabSimBtn').addEventListener('click', () => {
+    document.getElementById('tabSimBtn').classList.add('active');
+    document.getElementById('tabArsivBtn').classList.remove('active');
+    document.getElementById('simView').classList.remove('hidden');
+    document.getElementById('arsivView').classList.add('hidden');
   });
-  document.getElementById('prevBtn').addEventListener('click', () => { page--; render(parseFloat(document.getElementById('fPuan').value)); });
-  document.getElementById('nextBtn').addEventListener('click', () => { page++; render(parseFloat(document.getElementById('fPuan').value)); });
+  document.getElementById('tabArsivBtn').addEventListener('click', () => {
+    document.getElementById('tabArsivBtn').classList.add('active');
+    document.getElementById('tabSimBtn').classList.remove('active');
+    document.getElementById('arsivView').classList.remove('hidden');
+    document.getElementById('simView').classList.add('hidden');
+  });
+
+  document.getElementById('sMezuniyet').addEventListener('change', () => { bransListesiDoldur(); simulasyonHesapla(); });
+  document.getElementById('sBransAra').addEventListener('input', () => { bransListesiDoldur(); simulasyonHesapla(); });
+  document.getElementById('sBolge').addEventListener('change', () => { ilListesiDoldur(); simulasyonHesapla(); });
+  ['sBransSec', 'sDonem', 'sIl', 'sKurumAra', 'sKontenjan', 'sPuan'].forEach(id => {
+    document.getElementById(id).addEventListener('input', simulasyonHesapla);
+  });
+
+  document.getElementById('simPrev').addEventListener('click', () => { simPage--; renderSim(parseFloat(document.getElementById('sPuan').value), 2.0); });
+  document.getElementById('simNext').addEventListener('click', () => { simPage++; renderSim(parseFloat(document.getElementById('sPuan').value), 2.0); });
+
+  ['aMez', 'aTur', 'aAra', 'aBolge', 'aSirala'].forEach(id => {
+    document.getElementById(id).addEventListener('input', arsivFiltrele);
+  });
+  document.getElementById('aPrev').addEventListener('click', () => { arsivPage--; renderArsiv(); });
+  document.getElementById('aNext').addEventListener('click', () => { arsivPage++; renderArsiv(); });
 
   init();
 </script>
